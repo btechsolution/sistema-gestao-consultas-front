@@ -1,72 +1,99 @@
-🦷 Risum Odonto - Frontend
-Bem-vindo ao repositório do frontend da Risum Odonto! Este projeto é uma Single Page Application (SPA) desenvolvida com Angular, projetada para gerenciar as operações diárias de uma clínica odontológica de forma eficiente e intuitiva  
-What is a Single-Page Application (SPA)? #HipstersPontoTube + 2
-.
+# Risum Odonto - Frontend (Sistema de Gestão de Consultas)
 
-✨ Funcionalidades Principais
-Nosso sistema foi pensado para otimizar cada etapa do fluxo de trabalho de uma clínica:
+Bem-vindo ao repositório do frontend do sistema de gestão de clínicas odontológicas Risum Odonto. Este projeto é a interface do usuário que permite aos usuários interagir com o backend para gerenciar consultas, pacientes, prontuários e outras funcionalidades da clínica.
 
-Autenticação e Autorização: Sistema de login robusto com JWT e controle de acesso baseado em perfis (ADMIN, RECEPCAO, DENTISTA).
-Gestão de Pacientes: Cadastro, consulta, edição e visualização de prontuários completos de pacientes.
-Agenda de Consultas: Agendamento flexível, visualização por calendário, e gerenciamento de status (finalização e cancelamento).
-Gestão de Dentistas: Cadastro e gerenciamento de profissionais, incluindo especialidades e status de férias.
-Gestão de Especialidades: Cadastro e consulta de especialidades odontológicas oferecidas.
-Prescrição de Receitas: Emissão de receitas odontológicas para pacientes (funcionalidade exclusiva para o perfil DENTISTA).
-Controle Financeiro: Registro detalhado de entradas e saídas, com visualização de resumos financeiros (perfil ADMIN).
-Relatórios: Geração de declarações de comparecimento e relatórios financeiros em PDF.
-Catálogo de Serviços: Consulta de procedimentos e seus respectivos valores.
-🛠️ Tecnologias Utilizadas
-Para construir uma aplicação moderna e eficiente, utilizamos as seguintes tecnologias:
+## 🚀 Tecnologias Utilizadas
 
-Framework: Angular (v17+)
-Linguagem: TypeScript
-Estilização: SCSS
-Gráficos: Chart.js
-HTTP Client: Angular HttpClient
-Roteamento: Angular Router
-🚀 Como Rodar o Projeto
+Este frontend foi construído com as seguintes tecnologias e ferramentas:
 
-Siga estas instruções para configurar e executar o projeto em seu ambiente de desenvolvimento local. É mais fácil do que parece! 😉
+*   **Framework:** React (ou Angular, Vue.js - *ajuste conforme o seu*)
+*   **Linguagem:** JavaScript / TypeScript (ou apenas JavaScript - *ajuste conforme o seu*)
+*   **Gerenciamento de Estado:** Redux (ou Context API, Zustand, etc. - *ajuste conforme o seu*)
+*   **Estilização:** Styled Components (ou Sass, Tailwind CSS, CSS Modules - *ajuste conforme o seu*)
+*   **Roteamento:** React Router DOM (ou similar)
+*   **Requisições HTTP:** Axios (ou Fetch API)
+*   **Build Tool:** Vite (ou Create React App, Webpack - *ajuste conforme o seu*)
+*   **Testes:** Jest, React Testing Library (ou Cypress, Playwright - *ajuste conforme o seu*)
 
-Pré-requisitos:
-Certifique-se de ter as seguintes ferramentas instaladas em sua máquina:
+## 📦 Estrutura do Projeto
 
-Node.js (versão 18.x ou superior): Inclui o npm.
-Download Node.js
-Angular CLI: Para instalar globalmente, use o comando: bash
-npm install -g @angular/cli
-Backend da Risum Odonto: Este frontend depende de um backend rodando na porta 8082. Certifique-se de que o backend esteja configurado e em execução antes de iniciar o frontend.
-Documentação do Backend (para instruções de como rodar)
-Passos para Configuração e Execução:
-Clone o Repositório: bash
-git clone <URL_DO_SEU_REPOSITORIO_FRONTEND>
-cd risum-odonto-frontend # Ou o nome do seu diretório
-Instale as Dependências: bash
+O projeto segue uma estrutura modular para facilitar a organização e manutenção:
+
+## ⚙️ Configuração e Execução
+
+Siga os passos abaixo para configurar e executar o projeto em seu ambiente local.
+
+### Pré-requisitos
+
+Certifique-se de ter as seguintes ferramentas instaladas:
+
+*   Node.js (versão LTS recomendada)
+*   npm (Node Package Manager) ou Yarn
+*   Um cliente Git
+
+### 1. Clonar o Repositório
+git clone git@github.com:btechsolution/sistema-gestao-consultas-front.git
+cd sistema-gestao-consultas-front
+
+*   **Ajuste o nome do repositório conforme o seu.**
+
+### 2. Instalar Dependências
+
 npm install
-Inicie o Servidor de Desenvolvimento: bash
+# ou
+yarn install
+
+### 3. Configurar Variáveis de Ambiente
+
+O frontend precisa saber onde o backend está rodando. As configurações de ambiente são definidas em `src/environments/`.
+
+1.  Abra `src/environments/environment.ts` (para desenvolvimento) e `src/environments/environment.prod.ts` (para produção).
+2.  Ajuste a URL da API para onde seu backend está sendo executado:
+
+    ```typescript
+    export const environment = {
+      production: false,
+      apiUrl: 'http://localhost:8080/api' // Ajuste conforme a URL do seu backend
+    };
+    ```
+    *   **Importante:** Para produção, utilize a URL do backend em produção.
+
+### 4. Executar a Aplicação
+
+Para iniciar o servidor de desenvolvimento:
 ng serve
-O aplicativo será executado em http://localhost:4200/. O navegador deve abrir automaticamente.
-Acesse a Aplicação: Abra seu navegador e navegue para http://localhost:4200/.
-📂 Estrutura do Projeto
-O projeto segue a estrutura padrão de um aplicativo Angular, facilitando a navegação e o entendimento:
 
-src/app/: Contém os componentes principais da aplicação.
-dashboard/: Componente principal que gerencia as diferentes abas (Início, Agenda, Pacientes, etc.).
-login/: Componente para a tela de autenticação.
-app-routing.module.ts: Define as rotas da aplicação.
-app.component.ts: Componente raiz.
-src/assets/: Contém imagens, ícones e outros recursos estáticos.
-src/styles.scss: Estilos globais da aplicação.
+A aplicação será iniciada e estará disponível em `http://localhost:4200` (ou a porta configurada, que geralmente é exibida no terminal).
 
-🤝 Contribuição
-Contribuições são super bem-vindas! Se você tiver sugestões, melhorias ou encontrar bugs, por favor, siga estes passos:
+Para construir a aplicação para produção:
 
-Faça um fork do projeto.
-Crie uma nova branch (ex: git checkout -b feature/minha-feature ou bugfix/correcao-bug).
-Faça suas alterações e commit-as (ex: git commit -m 'feat: Adiciona nova funcionalidade').
-Envie para a branch (ex: git push origin feature/minha-feature).
-Abra um Pull Request.
 
-📄 Licença
+ng build --configuration production
 
-Este projeto está licenciado sob a licença MIT. Veja o arquivo LICENSE para mais detalhes.
+
+### 5. Executar Testes
+
+Para executar os testes unitários:
+
+
+ng test
+
+Para executar os testes end-to-end (E2E):
+ng e2e
+
+## 🤝 Contribuição
+
+Contribuições são bem-vindas! Se você deseja contribuir, por favor, siga os seguintes passos:
+
+1.  Faça um fork do projeto.
+2.  Crie uma nova branch (`git checkout -b feature/minha-nova-feature`).
+3.  Faça suas alterações e commit (`git commit -m 'feat: Adiciona nova funcionalidade X'`).
+4.  Envie para a branch (`git push origin feature/minha-nova-feature`).
+5.  Abra um Pull Request.
+
+## 📝 Licença
+
+Este projeto está licenciado sob a Licença MIT (ou a licença que você preferir). Veja o arquivo `LICENSE` para mais detalhes.
+
+---
+
