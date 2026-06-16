@@ -1,0 +1,185 @@
+/* VARIÁVEIS DE CORES RISUM DA IDENTIDADE VISUAL */
+$deep-blue: #1B4965;
+$mint-green: #BEE9E8;
+$off-white: #F9F9F9;
+$gray: #BEC5AD;
+
+.login-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background-color: $off-white;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  overflow: hidden; 
+}
+
+/* =========================================
+   LADO ESQUERDO: BANNER FOTOGRÁFICO
+   ========================================= */
+.login-banner {
+  flex: 1.2; 
+  /* Substitua pelo nome da imagem que você colocou na pasta assets */
+  background: url('/assets/recepcao.jpg') center center / cover no-repeat;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  padding: 4rem;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(to top, rgba($deep-blue, 0.9) 0%, rgba(transparent, 0) 60%);
+    z-index: 1;
+  }
+
+  .banner-content {
+    position: relative;
+    z-index: 2;
+    color: white;
+
+    h2 {
+      font-size: 2.8rem;
+      font-weight: 300;
+      line-height: 1.2;
+      margin: 0;
+      text-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      letter-spacing: 1px;
+    }
+  }
+}
+
+/* =========================================
+   LADO DIREITO: ÁREA DO FORMULÁRIO
+   ========================================= */
+.login-form-section {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: $off-white;
+
+  .form-wrapper {
+    width: 100%;
+    max-width: 420px; 
+    padding: 2rem;
+
+    .login-logo {
+      width: 220px;
+      margin-bottom: 3rem;
+      display: block;
+    }
+
+    .saudacao {
+      margin-bottom: 2.5rem;
+
+      h1 {
+        color: $deep-blue;
+        margin: 0 0 0.5rem 0;
+        font-size: 2.2rem;
+        font-weight: bold;
+      }
+
+      p {
+        color: darken($gray, 25%);
+        margin: 0;
+        font-size: 0.95rem;
+      }
+    }
+
+    .input-group {
+      margin-bottom: 1.5rem;
+
+      label {
+        display: block;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: $deep-blue;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+        letter-spacing: 0.5px;
+      }
+
+      input {
+        width: 100%;
+        padding: 14px 16px;
+        border: 1.5px solid rgba($gray, 0.5);
+        border-radius: 8px;
+        font-size: 1rem;
+        background-color: white;
+        color: $deep-blue;
+        transition: all 0.3s ease;
+        box-sizing: border-box;
+
+        &:focus {
+          border-color: $deep-blue;
+          box-shadow: 0 0 0 4px rgba($deep-blue, 0.1);
+          outline: none;
+        }
+
+        &::placeholder {
+          color: $gray;
+        }
+      }
+    }
+
+    .btn-login {
+      width: 100%;
+      padding: 15px;
+      background-color: $deep-blue;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 1rem;
+
+      &:hover:not(:disabled) {
+        background-color: $mint-green;
+        color: $deep-blue;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba($mint-green, 0.4);
+      }
+
+      &:disabled {
+        background-color: #bdc3c7;
+        cursor: not-allowed;
+      }
+    }
+
+    .login-footer {
+      margin-top: 3rem;
+      text-align: center;
+      p {
+        font-size: 0.8rem;
+        color: darken($gray, 15%);
+      }
+    }
+  }
+}
+
+/* =========================================
+   RESPONSIVIDADE (Para Celulares e Tablets)
+   ========================================= */
+@media (max-width: 900px) {
+  .login-container {
+    flex-direction: column;
+  }
+  
+  .login-banner {
+    display: none;
+  }
+
+  .login-form-section {
+    padding: 20px;
+    
+    .form-wrapper {
+      padding: 2rem;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    }
+  }
+}

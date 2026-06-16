@@ -1,0 +1,1313 @@
+<div class="dashboard-container">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">
+      <img src="assets/logo-risum.jpg" alt="Logo">
+      <h3>Risum Odonto</h3>
+    </div>
+    <ul class="menu">
+      <li (click)="trocarAba('inicio')" [class.active]="abaAtiva === 'inicio'">🏠 Início</li>
+      <li (click)="trocarAba('consultas')" [class.active]="abaAtiva === 'consultas'">📅 Agenda</li>
+      <li (click)="trocarAba('pacientes')" [class.active]="abaAtiva === 'pacientes'">👥 Pacientes</li>
+
+      <li *ngIf="userRole !== 'DENTISTA'"
+          (click)="trocarAba('dentistas')"
+          [class.active]="abaAtiva === 'dentistas'">
+        👨‍⚕️ Dentistas
+      </li>
+      <li *ngIf="userRole !== 'DENTISTA'"
+          (click)="trocarAba('especialidades')"
+          [class.active]="abaAtiva === 'especialidades'">
+        🩺 Especialidades
+      </li>
+
+      <li *ngIf="userRole === 'DENTISTA'"
+          (click)="trocarAba('receitas')"
+          [class.active]="abaAtiva === 'receitas'">
+        📝 Prescrever Receita
+      </li>
+
+      <li *ngIf="userRole === 'ADMIN'"
+          (click)="trocarAba('usuarios')"
+          [class.active]="abaAtiva === 'usuarios'">
+        🔐 Usuários
+      </li>
+      <li *ngIf="userRole === 'ADMIN'"
+          (click)="trocarAba('financeiro')"
+          [class.active]="abaAtiva === 'financeiro'">
+        💰 Financeiro
+      </li>
+
+      <hr *ngIf="userRole === 'DENTISTA' && dentistaLogadoDados"
+          style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+
+      <li *ngIf="userRole === 'DENTISTA' && dentistaLogadoDados"
+          (click)="solicitarAlteracaoFerias()"
+          [style.color]="dentistaLogadoDados.emFerias ? '#2ecc71' : '#e67e22'">
+        {{ dentistaLogadoDados.emFerias ? '🌴 Retorno Férias' : '🏖️ Entrar em Férias' }}
+      </li>
+    </ul>
+
+    <button class="btn-logout" (click)="deslogar()">Sair do Sistema</button>
+  </aside>
+
+  <!-- CONTEÚDO PRINCIPAL -->
+  <main class="main-content">
+
+    <!-- INÍCIO -->
+    <div [hidden]="abaAtiva !== 'inicio'">
+      <header>
+        <h1>Painel de Controle</h1>
+        <p *ngIf="userRole === 'DENTISTA' && dentistaLogadoDados"
+           style="margin-top: 0.5rem; color:#7f8c8d; font-size:0.9rem;">
+          Status:
+          <span [ngStyle]="{ color: dentistaLogadoDados.emFerias ? '#e67e22' : '#2ecc71', 'font-weight': '600' }">
+            {{ dentistaLogadoDados.emFerias ? 'Em Férias' : 'Atendendo normalmente' }}
+          </span>
+        </p>
+      </header>
+
+      <div class="cards-grid">
+        <div class="card">
+          <h3>Consultas Hoje</h3>
+          <p class="value">{{ resumo.consultasHoje }}</p>
+        </div>
+        <div class="card accent">
+          <h3>{{ userRole === 'DENTISTA' ? 'Meus Pacientes Ativos' : 'Total de Pacientes Ativos' }}</h3>
+          <p class="value">{{ resumo.totalPacientes }}</p>
+        </div>
+        <div class="card" *ngIf="userRole !== 'DENTISTA'">
+          <h3>Dentistas Ativos</h3>
+          <p class="value">{{ resumo.totalDentistas }}</p>
+        </div>
+        <div class="card" *ngIf="userRole === 'ADMIN'">
+          <h3>Saldo Líquido Mensal</h3>
+          <p class="value" style="color: #2ecc71;">R$ {{ resumo.saldoMensal | number:'1.2-2' }}</p>
+        </div>
+      </div>
+
+      <div class="charts-row" style="display: flex; gap: 1.5rem; margin-top: 2rem;">
+        <div class="chart-container"
+             style="flex: 2; background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05); height: 350px;">
+          <h3 style="font-size: 0.8rem; color: #7f8c8d; text-transform: uppercase; margin-bottom: 10px; font-weight: bold;">
+            Evolução de Atendimentos Clínicos
+          </h3>
+          <div style="position: relative; height: 260px; width: 100%;">
+            <canvas id="chartVisaoGeral"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-container" *ngIf="userRole === 'ADMIN'"
+             style="flex: 1; background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05); height: 350px;">
+          <h3 style="font-size: 0.8rem; color: #7f8c8d; text-transform: uppercase; margin-bottom: 10px; font-weight: bold;">
+            Financeiro
+          </h3>
+          <div style="position: relative; height: 260px; width: 100%;">
+            <canvas id="chartFinanceiro"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AGENDA -->
+    <div *ngIf="abaAtiva === 'consultas'">
+      <div class="section-header">
+        <h1>{{ userRole === 'DENTISTA' ? 'Minha Agenda' : 'Agenda de Atendimentos' }}</h1>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <input
+            type="text"
+            [(ngModel)]="termoBuscaConsulta"
+            placeholder="Buscar por paciente, dentista ou procedimento..."
+            class="search-input">
+
+          <button *ngIf="userRole !== 'DENTISTA'"
+                  class="btn-primary"
+                  style="background-color: #27ae60;"
+                  (click)="abrirModalDeclaracaoComparecimento()">
+            📄 Declaração Comparecimento
+          </button>
+
+          <button *ngIf="dataSelecionadaFiltro"
+                  class="btn-primary"
+                  style="background-color: #e67e22;"
+                  (click)="limparFiltroData()">
+            🔄 Ver Todos Horários
+          </button>
+
+          <button class="btn-primary" (click)="abrirModalConsulta()">+ Agendar Consulta</button>
+        </div>
+      </div>
+
+      <div class="agenda-layout-grid"
+           style="display: grid; grid-template-columns: 320px 1fr; gap: 1.5rem; margin-top: 1rem; align-items: start;">
+
+        <!-- CALENDÁRIO -->
+        <div class="calendar-card"
+             style="background: white; border-radius: 12px; padding: 1.2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+          <div class="calendar-header"
+               style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <button (click)="mudarMes(-1)"
+                    style="background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #1B4965; font-weight: bold;">
+              <
+            </button>
+            <h3 style="font-size: 0.95rem; color: #1B4965; font-weight: bold; text-transform: capitalize;">
+              {{ mesAtual | date:'MMMM yyyy' }}
+            </h3>
+            <button (click)="mudarMes(1)"
+                    style="background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #1B4965; font-weight: bold;">
+              >
+            </button>
+          </div>
+
+          <div class="calendar-weekdays"
+               style="display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 0.75rem; font-weight: bold; color: #7f8c8d; margin-bottom: 0.5rem;">
+            <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
+          </div>
+
+          <div class="calendar-days-grid"
+               style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center;">
+            <div *ngFor="let dia of diasCalendario"
+                 (click)="selecionarDataFiltro(dia)"
+                 [ngStyle]="{
+                   'height': '35px',
+                   'display': 'flex',
+                   'flex-direction': 'column',
+                   'justify-content': 'center',
+                   'align-items': 'center',
+                   'border-radius': '6px',
+                   'font-size': '0.85rem',
+                   'position': 'relative',
+                   'cursor': dia.numero && !dia.inativo ? 'pointer' : 'default',
+                   'background': dataSelecionadaFiltro === dia.dataCompleta ? '#1B4965' : (dia.inativo ? '#eaeded' : '#f8f9fa'),
+                   'color': dataSelecionadaFiltro === dia.dataCompleta ? 'white' : (dia.inativo ? '#bdc3c7' : '#2c3e50'),
+                   'border': dia.temConsulta ? '1.5px solid #2ecc71' : 'none'
+                 }">
+              <span>{{ dia.numero }}</span>
+              <span *ngIf="dia.temConsulta && dataSelecionadaFiltro !== dia.dataCompleta"
+                    style="width: 5px; height: 5px; background: #2ecc71; border-radius: 50%; position: absolute; bottom: 3px;">
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- LISTA DE CONSULTAS -->
+        <div class="table-container" style="margin-top: 0;">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Paciente</th>
+                <th>Dentista</th>
+                <th>Procedimentos Combinados</th>
+                <th>Início</th>
+                <th>Fim</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let c of consultasPaginadas">
+                <td>{{ c.paciente?.nome }}</td>
+                <td>{{ c.dentista?.nome }}</td>
+                <td>{{ c.descricao }}</td>
+                <td>{{ c.dataInicio | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td>{{ c.dataFim ? (c.dataFim | date:'dd/MM/yyyy HH:mm') : '--:--' }}</td>
+                <td>
+                  <span class="badge"
+                        [ngClass]="{
+                          'info-badge': c.status === 'AGENDADA',
+                          'active-badge': c.status === 'REALIZADA',
+                          'inactive-badge': c.status === 'CANCELADA'
+                        }">
+                    {{ c.status }}
+                  </span>
+                  <span *ngIf="c.status === 'CANCELADA' && c.motivoCancelamento"
+                        style="display:block; margin-top:5px; font-size:0.75rem; color:#e74c3c; font-style:italic;">
+                    Motivo: {{ c.motivoCancelamento }}
+                  </span>
+                </td>
+                <td>
+                  <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                    <button *ngIf="c.status === 'AGENDADA'"
+                            class="btn-cancelar-tabela"
+                            style="background-color: #2ecc71;"
+                            (click)="finalizarConsulta(c)">
+                      ✓ Finalizar
+                    </button>
+                    <button *ngIf="c.status === 'AGENDADA'"
+                            class="btn-cancelar-tabela"
+                            style="background-color: #e74c3c;"
+                            (click)="abrirCancelamento(c)">
+                      ✗ Cancelar
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <tr *ngIf="consultasFiltradas.length === 0">
+                <td colspan="7"
+                    style="text-align: center; color: #95a5a6; padding: 2rem;">
+                  Nenhuma consulta localizada para este período.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="paginacao-footer"
+               style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: #f8f9fa; border-top: 1px solid #e9ecef;">
+            <span style="font-size: 0.85rem; color: #6c757d;">
+              Total de Registros: <strong>{{ paginas.consultas.totalElementos }}</strong>
+            </span>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <button class="btn-cancelar-tabela"
+                      style="background: #1B4965; margin:0;"
+                      [disabled]="paginas.consultas.atual === 0"
+                      (click)="mudarPaginaFicha('consultas', -1)">
+                < Anterior
+              </button>
+              <span style="font-size: 0.85rem; color: #2c3e50;">
+                Página <strong>{{ paginas.consultas.atual + 1 }}</strong> de {{ paginas.consultas.totalPaginas || 1 }}
+              </span>
+              <button class="btn-cancelar-tabela"
+                      style="background: #1B4965; margin:0;"
+                      [disabled]="paginas.consultas.atual + 1 >= paginas.consultas.totalPaginas"
+                      (click)="mudarPaginaFicha('consultas', 1)">
+                Próxima >
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PACIENTES -->
+    <div *ngIf="abaAtiva === 'pacientes'">
+      <div class="section-header">
+        <h1>{{ userRole === 'DENTISTA' ? 'Meus Pacientes' : 'Gestão de Pacientes' }}</h1>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <input type="text"
+                 [(ngModel)]="termoBuscaPaciente"
+                 placeholder="Pesquisar paciente..."
+                 class="search-input">
+          <button *ngIf="userRole !== 'DENTISTA'"
+                  class="btn-primary"
+                  (click)="abrirModalPaciente()">
+            + Novo Paciente
+          </button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Status</th>
+              <th>CPF</th>
+              <th>Telefone</th>
+              <th>E-mail</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of pacientesBuscados">
+              <td><strong>{{ p.nome }}</strong></td>
+              <td>
+                <span class="badge"
+                      [ngClass]="p.ativo ? 'active-badge' : 'inactive-badge'">
+                  {{ p.ativo ? 'ATIVO' : 'DESATIVADO' }}
+                </span>
+              </td>
+              <td>{{ p.cpf }}</td>
+              <td>{{ p.telefone }}</td>
+              <td>{{ p.email }}</td>
+              <td>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+                  <button class="btn-cancelar-tabela"
+                          style="background-color: #9b59b6;"
+                          (click)="abrirProntuario(p)">
+                    📄 Prontuário
+                  </button>
+                  <button *ngIf="userRole !== 'DENTISTA'"
+                          class="btn-cancelar-tabela"
+                          style="background-color: #3498db;"
+                          (click)="abrirEdicaoPaciente(p)">
+                    ✏️ Editar
+                  </button>
+                  <button *ngIf="userRole === 'ADMIN'"
+                          class="btn-cancelar-tabela"
+                          [style.background-color]="p.ativo ? '#e67e22' : '#2ecc71'"
+                          (click)="abrirModalAlterarStatus('pacientes', p.id, p.ativo)">
+                    {{ p.ativo ? '🔒 Desativar' : '🔓 Ativar' }}
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <tr *ngIf="pacientesBuscados.length === 0">
+              <td colspan="6"
+                  style="text-align: center; padding: 2rem; color: #7f8c8d; font-style: italic;">
+                🔍 Nenhum paciente encontrado com o termo "{{ termoBuscaPaciente }}".
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="paginacao-footer"
+             style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: #f8f9fa; border-top: 1px solid #e9ecef;">
+          <span style="font-size: 0.85rem; color: #6c757d;">
+            Total de Registros: <strong>{{ paginas.pacientes.totalElementos }}</strong>
+          </span>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button class="btn-cancelar-tabela"
+                    style="background: #1B4965; margin:0;"
+                    [disabled]="paginas.pacientes.atual === 0"
+                    (click)="mudarPaginaFicha('pacientes', -1)">
+              < Anterior
+            </button>
+            <span style="font-size: 0.85rem; color: #2c3e50;">
+              Página <strong>{{ paginas.pacientes.atual + 1 }}</strong> de {{ paginas.pacientes.totalPaginas || 1 }}
+            </span>
+            <button class="btn-cancelar-tabela"
+                    style="background: #1B4965; margin:0;"
+                    [disabled]="paginas.pacientes.atual + 1 >= paginas.pacientes.totalPaginas"
+                    (click)="mudarPaginaFicha('pacientes', 1)">
+              Próxima >
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RECEITAS -->
+    <div *ngIf="abaAtiva === 'receitas'">
+      <div class="section-header">
+        <h1>Módulo de Prescrição Clínico</h1>
+        <div style="display: flex; gap: 10px;">
+          <input type="text"
+                 [(ngModel)]="termoBuscaReceita"
+                 placeholder="Filtrar por Paciente..."
+                 class="search-input">
+          <button class="btn-primary" (click)="abrirModalNovaReceita()">
+            + Prescrever Medicamento
+          </button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Paciente</th>
+              <th>Medicamento Prescrito</th>
+              <th>Posologia Recomendada</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of receitasPaginadas">
+              <td># {{ r.id }}</td>
+              <td><strong>{{ r.pacienteNome }}</strong></td>
+              <td>{{ r.medicamento }}</td>
+              <td>{{ r.posologia }}</td>
+              <td>
+                <button class="btn-cancelar-tabela"
+                        style="background-color: #34495e;"
+                        (click)="baixarReceitaDaTabela(r)">
+                  📥 Imprimir PDF
+                </button>
+              </td>
+            </tr>
+
+            <tr *ngIf="receitasBuscadas.length === 0">
+              <td colspan="5"
+                  style="text-align:center; padding:2rem; color:#7f8c8d;">
+                Nenhuma receita emitida recentemente.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="paginacao-footer"
+             style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: #f8f9fa; border-top: 1px solid #e9ecef;">
+          <span style="font-size: 0.85rem; color: #6c757d;">
+            Total de Registros: <strong>{{ paginas.receitas.totalElementos }}</strong>
+          </span>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button class="btn-cancelar-tabela"
+                    style="background: #1B4965; margin:0;"
+                    [disabled]="paginas.receitas.atual === 0"
+                    (click)="mudarPaginaFicha('receitas', -1)">
+              < Anterior
+            </button>
+            <span style="font-size: 0.85rem; color: #2c3e50;">
+              Página <strong>{{ paginas.receitas.atual + 1 }}</strong> de {{ paginas.receitas.totalPaginas || 1 }}
+            </span>
+            <button class="btn-cancelar-tabela"
+                    style="background: #1B4965; margin:0;"
+                    [disabled]="paginas.receitas.atual + 1 >= paginas.receitas.totalPaginas"
+                    (click)="mudarPaginaFicha('receitas', 1)">
+              Próxima >
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DENTISTAS -->
+    <div *ngIf="abaAtiva === 'dentistas'">
+      <div class="section-header">
+        <h1>Corpo Clínico</h1>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <input type="text"
+                 [(ngModel)]="termoBuscaDentista"
+                 placeholder="Pesquisar dentista..."
+                 class="search-input">
+          <button *ngIf="userRole === 'ADMIN'"
+                  class="btn-primary"
+                  (click)="abrirModalDentista()">
+            + Novo Dentista
+          </button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Status</th>
+              <th>CRO</th>
+              <th>Especialidade</th>
+              <th *ngIf="userRole === 'ADMIN'">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let d of dentistasBuscados">
+              <td>
+                <strong>{{ d.nome }}</strong>
+                <span *ngIf="d.emFerias"
+                      class="badge info-badge"
+                      style="margin-left: 6px; background:#fef5e7; color:#e67e22;">
+                  EM FÉRIAS
+                </span>
+              </td>
+              <td>
+                <span class="badge"
+                      [ngClass]="d.ativo ? 'active-badge' : 'inactive-badge'">
+                  {{ d.ativo ? 'ATIVO' : 'DESATIVADO' }}
+                </span>
+              </td>
+              <td>{{ d.cro }}</td>
+              <td>
+                <span class="badge info-badge">
+                  {{ d.especialidades[0]?.nome }}
+                </span>
+              </td>
+              <td *ngIf="userRole === 'ADMIN'">
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                  <button class="btn-cancelar-tabela"
+                          style="background-color: #3498db;"
+                          (click)="abrirEdicaoDentista(d)">
+                    ✏️ Editar
+                  </button>
+                  <button class="btn-cancelar-tabela"
+                          [style.background-color]="d.ativo ? '#e67e22' : '#2ecc71'"
+                          (click)="abrirModalAlterarStatus('dentistas', d.id, d.ativo)">
+                    {{ d.ativo ? '🔒 Desativar' : '🔓 Ativar' }}
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="paginacao-footer"
+             style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: #f8f9fa; border-top: 1px solid #e9ecef;">
+          <span style="font-size: 0.85rem; color: #6c757d;">
+            Total de Registros: <strong>{{ paginas.dentistas.totalElementos }}</strong>
+          </span>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button class="btn-cancelar-tabela"
+                    style="background: #1B4965; margin:0;"
+                    [disabled]="paginas.dentistas.atual === 0"
+                    (click)="mudarPaginaFicha('dentistas', -1)">
+              < Anterior
+            </button>
+            <span style="font-size: 0.85rem; color: #2c3e50;">
+              Página <strong>{{ paginas.dentistas.atual + 1 }}</strong> de {{ paginas.dentistas.totalPaginas || 1 }}
+            </span>
+            <button class="btn-cancelar-tabela"
+                    style="background: #1B4965; margin:0;"
+                    [disabled]="paginas.dentistas.atual + 1 >= paginas.dentistas.totalPaginas"
+                    (click)="mudarPaginaFicha('dentistas', 1)">
+              Próxima >
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ESPECIALIDADES -->
+    <div *ngIf="abaAtiva === 'especialidades'">
+      <div class="section-header">
+        <h1>Especialidades Clínicas</h1>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <input type="text"
+                 [(ngModel)]="termoBuscaEspecialidade"
+                 placeholder="Pesquisar especialidade..."
+                 class="search-input">
+          <button *ngIf="userRole === 'ADMIN'"
+                  class="btn-primary"
+                  (click)="abrirModalEspecialidade()">
+            + Nova Especialidade
+          </button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th *ngIf="userRole === 'ADMIN'">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let e of especialidadesBuscadas">
+              <td><strong>{{ e.nome }}</strong></td>
+              <td *ngIf="userRole === 'ADMIN'">
+                <button class="btn-cancelar-tabela"
+                        style="background-color: #e74c3c;"
+                        (click)="excluirEspecialidade(e.id)">
+                  🗑️ Excluir
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="paginacao-footer"
+             style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: #f8f9fa; border-top: 1px solid #e9ecef;">
+          <span style="font-size: 0.85rem; color: #6c757d;">
+            Total de Registros: <strong>{{ paginas.especialidades.totalElementos }}</strong>
+          </span>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button class="btn-cancelar-tabela"
+                    style="background: #1B4965; margin:0;"
+                    [disabled]="paginas.especialidades.atual === 0"
+                    (click)="mudarPaginaFicha('especialidades', -1)">
+              < Anterior
+            </button>
+            <span style="font-size: 0.85rem; color: #2c3e50;">
+              Página <strong>{{ paginas.especialidades.atual + 1 }}</strong> de {{ paginas.especialidades.totalPaginas || 1 }}
+            </span>
+            <button class="btn-cancelar-tabela"
+                    style="background: #1B4965; margin:0;"
+                    [disabled]="paginas.especialidades.atual + 1 >= paginas.especialidades.totalPaginas"
+                    (click)="mudarPaginaFicha('especialidades', 1)">
+              Próxima >
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- USUÁRIOS -->
+    <div *ngIf="abaAtiva === 'usuarios' && userRole === 'ADMIN'">
+      <div class="section-header">
+        <h1>Controle de Usuários do Sistema</h1>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <input type="text"
+                 [(ngModel)]="termoBuscaUsuario"
+                 placeholder="Filtrar por nome, e-mail ou perfil..."
+                 class="search-input">
+          <button class="btn-primary"
+                  (click)="abrirModalUsuario()">
+            + Novo Usuário
+          </button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>E-mail</th>
+              <th>Perfil</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let u of usuariosBuscados">
+              <td>{{ u.nome }}</td>
+              <td>{{ u.email }}</td>
+              <td>
+                <span class="badge info-badge">
+                  {{ u.perfil }}
+                </span>
+              </td>
+              <td>
+                <button class="btn-cancelar-tabela"
+                        style="background-color: #3498db;"
+                        (click)="abrirEdicaoUsuario(u)">
+                  ✏️ Editar
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="usuariosBuscados.length === 0">
+              <td colspan="5"
+                  style="text-align:center; padding:2rem; color:#7f8c8d;">
+                Nenhum usuário localizado.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="paginacao-footer"
+             style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: #f8f9fa; border-top: 1px solid #e9ecef;">
+          <span style="font-size: 0.85rem; color: #6c757d;">
+            Total de Registros: <strong>{{ paginas.usuarios.totalElementos }}</strong>
+          </span>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button class="btn-cancelar-tabela"
+                    style="background: #1B4965; margin:0;"
+                    [disabled]="paginas.usuarios.atual === 0"
+                    (click)="mudarPaginaFicha('usuarios', -1)">
+              < Anterior
+            </button>
+            <span style="font-size: 0.85rem; color: #2c3e50;">
+              Página <strong>{{ paginas.usuarios.atual + 1 }}</strong> de {{ paginas.usuarios.totalPaginas || 1 }}
+            </span>
+            <button class="btn-cancelar-tabela"
+                    style="background: #1B4965; margin:0;"
+                    [disabled]="paginas.usuarios.atual + 1 >= paginas.usuarios.totalPaginas"
+                    (click)="mudarPaginaFicha('usuarios', 1)">
+              Próxima >
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FINANCEIRO -->
+    <div *ngIf="abaAtiva === 'financeiro' && userRole === 'ADMIN'">
+      <div class="section-header">
+        <h1>Fluxo de Caixa</h1>
+        <div style="display:flex; gap:10px;">
+          <button class="btn-primary" style="background: #2ecc71;" (click)="abrirModalFinanceiro()">
+            + Novo Lançamento
+          </button>
+          <button class="btn-primary" (click)="baixarRelatorioFinanceiro()">
+            📥 Gerar PDF
+          </button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Descrição</th>
+              <th>Status</th>
+              <th>Valor Bruto</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let f of financeiroPaginado">
+              <td>{{ f.dataLancamento | date:'dd/MM/yyyy' }}</td>
+              <td>
+                <div *ngIf="!f.descricao.includes('|')">{{ f.descricao.replace('[Procedimentos Combinados] ', '') }}</div>
+                <div *ngIf="f.descricao.includes('|')">
+                  {{ f.descricao.split('|')[0].replace('[Procedimentos Combinados] ', '') }}<br>
+                  <span class="motivo-txt"
+                        style="color: #e74c3c; font-style: italic; font-size: 0.8rem;">
+                    {{ f.descricao.split('|')[1] }}
+                  </span>
+                </div>
+              </td>
+              <td>
+                <span class="badge"
+                      [ngClass]="{
+                        'active-badge': f.tipo === 'ENTRADA',
+                        'inactive-badge': f.tipo === 'SAIDA' || f.tipo === 'CANCELADO',
+                        'info-badge': f.tipo === 'PENDENTE'
+                      }">
+                  {{ f.tipo }}
+                </span>
+              </td>
+              <td>R$ {{ f.valor | number:'1.2-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="paginacao-footer"
+             style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: #f8f9fa; border-top: 1px solid #e9ecef;">
+          <span style="font-size: 0.85rem; color: #6c757d;">
+            Total de Registros: <strong>{{ paginas.financeiro.totalElementos }}</strong>
+          </span>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button class="btn-cancelar-tabela"
+                    style="background: #1B4965; margin:0;"
+                    [disabled]="paginas.financeiro.atual === 0"
+                    (click)="mudarPaginaFicha('financeiro', -1)">
+              < Anterior 
+            </button>
+            <span style="font-size: 0.85rem; color: #2c3e50;">
+              Página <strong>{{ paginas.financeiro.atual + 1 }}</strong> de {{ paginas.financeiro.totalPaginas || 1 }}
+            </span>
+            <button class="btn-cancelar-tabela"
+                    style="background: #1B4965; margin:0;"
+                    [disabled]="paginas.financeiro.atual + 1 >= paginas.financeiro.totalPaginas"
+                    (click)="mudarPaginaFicha('financeiro', 1)">
+              Próxima >
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- MODAL PACIENTE -->
+  <div class="modal-overlay" *ngIf="exibirModalPaciente">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>{{ editando ? 'Editar' : 'Novo' }} Paciente</h2>
+        <button class="btn-close" (click)="exibirModalPaciente = false">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group-modal">
+          <label>Nome Completo</label>
+          <input type="text" [(ngModel)]="novoPaciente.nome">
+        </div>
+        <div class="modal-row">
+          <div class="form-group-modal">
+            <label>CPF</label>
+            <input type="text"
+                   inputmode="numeric"
+                   maxlength="14"
+                   [(ngModel)]="novoPaciente.cpf"
+                   (input)="aplicarMascaraCPF($event, 'paciente')"
+                   placeholder="000.000.000-00">
+          </div>
+          <div class="form-group-modal">
+            <label>Telefone</label>
+            <input type="tel"
+                   inputmode="numeric"
+                   maxlength="15"
+                   [(ngModel)]="novoPaciente.telefone"
+                   (input)="aplicarMascaraTelefone($event)"
+                   placeholder="(00) 00000-0000">
+          </div>
+        </div>
+        <div class="form-group-modal">
+          <label>E-mail</label>
+          <input type="email" [(ngModel)]="novoPaciente.email" placeholder="nome@exemplo.com">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-salvar" (click)="salvarPaciente()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CONSULTA -->
+  <div class="modal-overlay" *ngIf="exibirModalConsulta">
+    <div class="modal-card">
+      <div class="modal-header">
+        
+        <h2>Novo Agendamento</h2>
+        <button class="btn-close" (click)="exibirModalConsulta = false">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group-modal">
+          <label>Dentista</label>
+          <select [(ngModel)]="novaConsulta.dentista.id" (change)="filtrarProcedimentos()">
+            <option [ngValue]="null">Selecione...</option>
+            
+            <option *ngFor="let d of dentistasAtivosParaAgendamento" [value]="d.id" [disabled]="d.emFerias">
+              {{ d.nome }} <span *ngIf="d.emFerias"> (Em Férias)</span>
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group-modal">
+          <label>Selecione os Procedimentos (Segure Ctrl para escolher múltiplos)</label>
+          <select multiple
+                  [(ngModel)]="novaConsulta.procedimentosSelecionados"
+                  (change)="atualizarValorProcedimento()"
+                  style="height: 100px;">
+            <option *ngFor="let s of servicosFiltrados" [value]="s">{{ s }}</option>
+          </select>
+        </div>
+
+        <div class="modal-row">
+          <div class="form-group-modal">
+            <label>Paciente</label>
+            <select [(ngModel)]="novaConsulta.paciente.id">
+              <option [ngValue]="null">Selecione...</option>
+              <!-- Usando lista de pacientes ativos -->
+              <option *ngFor="let p of pacientesAtivosParaAgendamento" [value]="p.id">{{ p.nome }}</option>
+            </select>
+          </div>
+          <div class="form-group-modal">
+            <label>Valor Total do Plano</label>
+            <input type="text"
+                   [value]="'R$ ' + valorSugeridoAtual"
+                   disabled
+                   style="background:#f1f2f6; font-weight:bold; color:#1B4965;">
+          </div>
+        </div>
+
+        <div class="modal-row">
+          <div class="form-group-modal">
+            <label>Horário Início</label>
+            <input type="datetime-local"
+                   [(ngModel)]="novaConsulta.dataInicio"
+                   [min]="dataMinima"
+                   [max]="dataMaxima"
+                   (change)="validarHorarioDigitado()">
+          </div>
+          <div class="form-group-modal">
+            <label>Horário Fim (Sugestão Automática)</label>
+            <input type="datetime-local"
+                   [(ngModel)]="novaConsulta.dataFim"
+                   [min]="dataMinima"
+                   [max]="dataMaxima"
+                   (change)="validarHorarioFinal()">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-salvar" (click)="salvarConsulta()">Marcar Consulta</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DENTISTA -->
+  <div class="modal-overlay" *ngIf="exibirModalDentista">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>{{ editando ? 'Editar' : 'Novo' }} Dentista</h2>
+        <button class="btn-close" (click)="exibirModalDentista = false">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group-modal">
+          <label>Nome</label>
+          <input type="text" [(ngModel)]="novoDentista.nome">
+        </div>
+        <div class="modal-row">
+          <div class="form-group-modal">
+            <label>CRO</label>
+            <input type="text"
+                   [(ngModel)]="novoDentista.cro"
+                   (input)="aplicarMascaraCRO($event)"
+                   placeholder="00000/UF">
+          </div>
+          <div class="form-group-modal">
+            <label>Especialidade</label>
+            <select [(ngModel)]="novoDentista.especialidades">
+              <option *ngFor="let e of especialidades" [value]="e.id">{{ e.nome }}</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-row">
+          <div class="form-group-modal">
+            <label>CPF</label>
+            <input type="text"
+                   inputmode="numeric"
+                   maxlength="14"
+                   [(ngModel)]="novoDentista.cpf"
+                   (input)="aplicarMascaraCPF($event, 'dentista')"
+                   placeholder="000.000.000-00">
+          </div>
+          <div class="form-group-modal">
+            <label>E-mail</label>
+            <input type="email"
+                   [(ngModel)]="novoDentista.email"
+                   placeholder="medico@exemplo.com">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-salvar" (click)="salvarDentista()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL USUÁRIO -->
+  <div class="modal-overlay" *ngIf="exibirModalUsuario">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>{{ editando ? 'Editar' : 'Novo' }} Usuário</h2>
+        <button class="btn-close" (click)="exibirModalUsuario = false">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group-modal">
+          <label>Nome</label>
+          <input type="text" [(ngModel)]="novoUsuario.nome">
+        </div>
+        <div class="form-group-modal">
+          <label>E-mail</label>
+          <input type="email" [(ngModel)]="novoUsuario.email">
+        </div>
+        <div class="modal-row">
+          <div class="form-group-modal" *ngIf="!editando">
+            <label>Senha</label>
+            <input type="password" [(ngModel)]="novoUsuario.senha">
+          </div>
+          <div class="form-group-modal">
+            <label>Perfil</label>
+            <select [(ngModel)]="novoUsuario.perfil">
+              <option value="ADMIN">Administrador</option>
+              <option value="DENTISTA">Dentista</option>
+              <option value="RECEPCAO">Recepção</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-salvar" (click)="salvarUsuario()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL ESPECIALIDADE -->
+  <div class="modal-overlay" *ngIf="exibirModalEspecialidade">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Nova Especialidade</h2>
+        <button class="btn-close" (click)="exibirModalEspecialidade = false">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group-modal">
+          <label>Nome</label>
+          <input type="text" [(ngModel)]="novaEspecialidade.nome">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-salvar" (click)="salvarEspecialidade()">Adicionar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL FINANCEIRO -->
+  <div class="modal-overlay" *ngIf="exibirModalFinanceiro">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Novo Lançamento</h2>
+        <button class="btn-close" (click)="exibirModalFinanceiro = false">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group-modal">
+          <label>Descrição</label>
+          <input type="text" [(ngModel)]="novoLancamento.descricao">
+        </div>
+        <div class="modal-row">
+          <div class="form-group-modal">
+            <label>Valor (R$)</label>
+            <input type="number" [(ngModel)]="novoLancamento.valor">
+          </div>
+          <div class="form-group-modal">
+            <label>Tipo</label>
+            <select [(ngModel)]="novoLancamento.tipo">
+              <option value="ENTRADA">Entrada</option>
+              <option value="SAIDA">Saída</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group-modal">
+          <label>Paciente (Opcional)</label>
+          <select [(ngModel)]="novoLancamento.paciente.id">
+            <option [ngValue]="null">Avulso</option>
+            <option *ngFor="let p of pacientes" [value]="p.id">
+              {{ p.nome }}
+            </option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-salvar" (click)="salvarLancamento()">Lançar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL SUCESSO -->
+  <div class="modal-overlay" *ngIf="modalSucesso.visivel" style="z-index: 99999;">
+    <div class="modal-card"
+         style="width: 350px; text-align: center; padding: 2.5rem 2rem; border-top: 6px solid #2ecc71;">
+      <div style="font-size: 3.5rem; color: #2ecc71; margin-bottom: 0.5rem; line-height: 1;">✓</div>
+      <h2>Sucesso!</h2>
+      <p style="color: #7f8c8d; font-size: 0.95rem;">{{ modalSucesso.mensagem }}</p>
+    </div>
+  </div>
+
+  <!-- MODAL ERRO -->
+  <div class="modal-overlay" *ngIf="modalErro.visivel" style="z-index: 99999;">
+    <div class="modal-card"
+         style="width: 380px; text-align: center; padding: 2.5rem 2rem; border-top: 6px solid #e74c3c;">
+      <div style="font-size: 3.5rem; color: #e74c3c; margin-bottom: 0.5rem; line-height: 1;">✕</div>
+      <h2>{{ modalErro.titulo }}</h2>
+      <p style="color: #7f8c8d; font-size: 0.95rem; line-height: 1.5; margin-bottom: 1.5rem;">
+        {{ modalErro.mensagem }}
+      </p>
+      <button class="btn-primary"
+              style="width: 100%; background: #e74c3c; border-radius: 6px;"
+              (click)="modalErro.visivel = false">
+        Fechar Aviso
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL CONFIRMAÇÃO -->
+  <div class="modal-overlay" *ngIf="modalConfirmacao.visivel" style="z-index: 99998;">
+    <div class="modal-card"
+         style="width: 400px; text-align: center; padding: 2.5rem 2rem; border-top: 6px solid #f39c12;">
+      <div style="font-size: 3.5rem; color: #f39c12; margin-bottom: 0.5rem; line-height: 1;">?</div>
+      <h2>{{ modalConfirmacao.titulo }}</h2>
+      <p style="color: #7f8c8d; font-size: 0.95rem; line-height: 1.5; margin-bottom: 1.5rem;">
+        {{ modalConfirmacao.mensagem }}
+      </p>
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <button class="btn-salvar"
+                style="background: #95a5a6; flex: 1;"
+                (click)="modalConfirmacao.visivel = false">
+          Cancelar
+        </button>
+        <button class="btn-primary"
+                style="flex: 1; border-radius: 6px;"
+                (click)="modalConfirmacao.acaoConfirmar()">
+          Confirmar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CANCELAMENTO DE CONSULTA -->
+  <div class="modal-overlay" *ngIf="modalCancelamento.visivel" style="z-index: 99998;">
+    <div class="modal-card" style="width: 450px; border-top: 6px solid #e74c3c;">
+      <div class="modal-header">
+        <h2>Cancelar Consulta</h2>
+        <button class="btn-close" (click)="modalCancelamento.visivel = false">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Informe a justificativa:</p>
+        <div class="form-group-modal">
+          <input type="text"
+                 [(ngModel)]="modalCancelamento.motivo"
+                 placeholder="Motivo do cancelamento (Obrigatório)..."
+                 [ngStyle]="{'border-color': modalCancelamento.erro ? '#e74c3c' : ''}">
+          <span *ngIf="modalCancelamento.erro"
+                style="color: #e74c3c; font-size: 0.75rem; font-weight: 600; display: block; margin-top: 4px;">
+            {{ modalCancelamento.erro }}
+          </span>
+        </div>
+      </div>
+      <div class="modal-footer"
+           style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button class="btn-salvar"
+                style="background: #95a5a6;"
+                (click)="modalCancelamento.visivel = false">
+          Voltar
+        </button>
+        <button class="btn-primary"
+                style="background: #e74c3c;"
+                (click)="confirmarCancelamento()">
+          Confirmar Cancelamento
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL PRONTUÁRIO -->
+  <div class="modal-overlay" *ngIf="exibirModalProntuario">
+    <div class="modal-card"
+         style="width: 750px; border-top: 6px solid #9b59b6;">
+      <div class="modal-header">
+        <h2>Prontuário Geral Odontológico</h2>
+        <button class="btn-primary"
+                style="background:#34495e;"
+                (click)="baixarProntuarioPDF()">
+          📥 Exportar Ficha em PDF
+        </button>
+      </div>
+      <div class="modal-body"
+           style="max-height: 60vh; overflow-y: auto; padding-top: 0;">
+        <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; margin-top: 15px; border-left: 4px solid #34495e;">
+          <p style="margin: 0; font-size: 0.9rem; color: #2c3e50;">
+            <strong>Contato:</strong> {{ pacienteSelecionadoProntuario?.telefone }} |
+            <strong>E-mail:</strong> {{ pacienteSelecionadoProntuario?.email }}
+          </p>
+        </div>
+        <h3>Paciente: {{ pacienteSelecionadoProntuario?.nome }}</h3>
+        <table class="custom-table" style="font-size: 0.85rem;">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Procedimento</th>
+              <th>Profissional</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let hist of historicoConsultasPaciente">
+              <td>
+                <strong>{{ hist.dataInicio | date:'dd/MM/yyyy' }}</strong><br>
+                <span style="color:#7f8c8d; font-size: 0.75rem;">
+                  {{ hist.dataInicio | date:'HH:mm' }}
+                </span>
+              </td>
+              <td>{{ hist.descricao }}</td>
+              <td>{{ hist.dentista?.nome }}</td>
+              <td>
+                <span class="badge"
+                      [ngClass]="{
+                        'info-badge': hist.status === 'AGENDADA',
+                        'active-badge': hist.status === 'REALIZADA',
+                        'inactive-badge': hist.status === 'CANCELADA'
+                      }">
+                  {{ hist.status }}
+                </span>
+                <span *ngIf="hist.status === 'CANCELADA' && hist.motivoCancelamento"
+                      style="display:block; margin-top:3px; font-size:0.7rem; color:#e74c3c; font-style:italic;">
+                  Motivo: {{ hist.motivoCancelamento }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-salvar"
+                style="background: #95a5a6;"
+                (click)="exibirModalProntuario = false">
+          Fechar Prontuário
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DECLARAÇÃO -->
+  <div class="modal-overlay" *ngIf="exibirModalDeclaracao">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Emitir Declaração de Comparecimento</h2>
+        <button class="btn-close" (click)="exibirModalDeclaracao = false">&times;</button>
+      </div>
+      <div class="modal-body">
+
+        <div class="form-group-modal">
+          <label>Consulta Realizada</label>
+          <select [(ngModel)]="dadosDeclaracao.consultaId"
+                  (ngModelChange)="preencherDadosDeclaracao($event)">
+            <option [ngValue]="null">Selecione uma consulta realizada...</option>
+            <option *ngFor="let c of consultasElegiveisDeclaracao" [ngValue]="c.id">
+              {{ c.paciente?.nome }} -
+              {{ c.dataInicio | date:'dd/MM/yyyy HH:mm' }} até
+              {{ c.dataFim   | date:'HH:mm' }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group-modal">
+          <label>Data do Atendimento</label>
+          <input type="date" [(ngModel)]="dadosDeclaracao.data">
+        </div>
+        <div class="modal-row">
+          <div class="form-group-modal">
+            <label>Entrada (Horário)</label>
+            <input type="time" [(ngModel)]="dadosDeclaracao.horarioInicio">
+          </div>
+          <div class="form-group-modal">
+            <label>Saída (Horário)</label>
+            <input type="time" [(ngModel)]="dadosDeclaracao.horarioFim">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-salvar" (click)="gerarDeclaracaoPDF()">
+          Gerar PDF Oficial
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL RECEITA -->
+  <div class="modal-overlay" *ngIf="exibirModalReceita">
+    <div class="modal-card" style="border-top: 6px solid #27ae60;">
+      <div class="modal-header">
+        <h2>Nova Prescrição Odontológica</h2>
+        <button class="btn-close" (click)="exibirModalReceita = false">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group-modal">
+          <label>Paciente</label>
+          <select [(ngModel)]="dadosReceita.pacienteId">
+            <option *ngFor="let p of pacientes" [value]="p.id">
+              {{ p.nome }}
+            </option>
+          </select>
+        </div>
+        <div class="form-group-modal">
+          <label>Medicamento / Concentração</label>
+          <input type="text"
+                 [(ngModel)]="dadosReceita.medicamento"
+                 placeholder="Ex: Amoxicilina 500mg">
+        </div>
+        <div class="form-group-modal">
+          <label>Orientação de Posologia</label>
+          <textarea [(ngModel)]="dadosReceita.posologia"
+                    rows="4"
+                    style="border: 1px solid #BEC5AD; border-radius: 6px; padding: 10px;"
+                    placeholder="Ex: Tomar 1 comprimido de 8 em 8 horas por 7 dias.">
+          </textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-salvar"
+                style="background:#27ae60;"
+                (click)="salvarERenderizarReceita()">
+          Salvar e Emitir Receita
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL STATUS (ATIVAR/DESATIVAR) -->
+  <div class="modal-overlay" *ngIf="modalStatus.visivel" style="z-index: 9997;">
+    <div class="modal-card" style="width: 450px; border-top: 6px solid #e67e22;">
+      <div class="modal-header">
+        <h2>Confirmar Desativação de Registro</h2>
+        <button class="btn-close" (click)="modalStatus.visivel = false">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Você solicitou a suspensão do registro selecionado. Para prosseguir, descreva detalhadamente a justificativa clínica/administrativa desta ação:</p>
+        <div class="form-group-modal">
+          <input type="text"
+                 [(ngModel)]="modalStatus.justificativa"
+                 placeholder="Descreva o motivo da desativação..."
+                 [ngStyle]="{'border-color': modalStatus.erro ? '#e74c3c' : ''}">
+          <span *ngIf="modalStatus.erro"
+                style="color: #e74c3c; font-size: 0.75rem; margin-top: 4px; font-weight: 600; display: block;">
+            {{ modalStatus.erro }}
+          </span>
+        </div>
+      </div>
+      <div class="modal-footer" style="display: flex; gap: 10px;">
+        <button class="btn-salvar"
+                style="background: #95a5a6;"
+                (click)="modalStatus.visivel = false">
+          Voltar
+        </button>
+        <button class="btn-primary"
+                style="background: #e67e22;"
+                (click)="confirmarAlteracaoStatus()">
+          Confirmar Desativação
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,58 @@
+<div class="login-container">
+  
+  <div class="login-banner">
+    <div class="banner-content">
+      <h2>Sua família acolhida<br>em cada sorriso.</h2>
+    </div>
+  </div>
+
+  <div class="login-form-section">
+    <div class="form-wrapper">
+      
+      <img src="assets/logo-risum.jpg" alt="Risum Odonto Logo" class="login-logo">
+      
+      <div class="saudacao">
+        <h1>Bem-vindo(a)</h1>
+        <p>Insira suas credenciais para acessar o sistema.</p>
+      </div>
+
+      <form (ngSubmit)="efetuarLogin()" #loginForm="ngForm">
+        
+        <div class="input-group">
+          <label for="email">E-mail</label>
+          <input 
+            type="email" 
+            id="email" 
+            name="email" 
+            [(ngModel)]="dadosLogin.email" 
+            required 
+            placeholder="exemplo@clinica.com"
+          >
+        </div>
+
+        <div class="input-group">
+          <label for="senha">Senha</label>
+          <input 
+            type="password" 
+            id="senha" 
+            name="senha" 
+            [(ngModel)]="dadosLogin.senha" 
+            required 
+            placeholder="Digite sua senha"
+          >
+        </div>
+
+        <button type="submit" class="btn-login" [disabled]="loginForm.invalid || carregando">
+          {{ carregando ? 'Acessando...' : 'Acessar Sistema' }}
+        </button>
+
+      </form>
+
+      <div class="login-footer">
+        <p>Precisa de ajuda? Contate o administrador.</p>
+      </div>
+
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,32 @@
+<header class="section-header">
+  <h1>Gestão de Especialidades</h1>
+</header>
+
+<div style="background: #f4f7f6; padding: 20px; border-radius: 10px; margin-bottom: 30px; display: flex; gap: 15px; align-items: flex-end;">
+  <div class="form-group-modal" style="flex: 1; margin-bottom: 0;">
+    <label>Nova Especialidade</label>
+    <input type="text" [(ngModel)]="novaEspecialidade.nome" placeholder="Ex: Odontopediatria">
+  </div>
+  <button class="btn-primary" (click)="salvar()" style="height: 45px;">Cadastrar</button>
+</div>
+
+<div class="table-container">
+  <table class="custom-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nome da Especialidade</th>
+        <th style="text-align: center;">Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let e of especialidades">
+        <td>{{ e.id }}</td>
+        <td><strong>{{ e.nome }}</strong></td>
+        <td style="text-align: center;">
+          <button class="btn-cancelar-tabela" (click)="excluir(e.id)">Remover</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

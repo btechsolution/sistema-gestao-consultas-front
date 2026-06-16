@@ -1,0 +1,119 @@
+$primary-color: #2c3e50;
+$danger-color: #e74c3c;
+$background-light: #f4f7f6;
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  border-bottom: 2px solid #eaeded;
+  padding-bottom: 15px;
+
+  h1 {
+    font-size: 24px;
+    color: #2c3e50;
+    margin: 0;
+  }
+}
+
+.form-group-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  label {
+    font-weight: 600;
+    font-size: 14px;
+    color: #555;
+  }
+
+  input {
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+
+    &:focus {
+      border-color: $primary-color;
+    }
+  }
+}
+
+.btn-primary {
+  background-color: $primary-color;
+  color: white;
+  border: none;
+  padding: 0 25px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+.table-container {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  margin-top: 15px;
+}
+
+.custom-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+
+  thead {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #eaeaea;
+
+    th {
+      padding: 16px;
+      font-weight: 600;
+      color: #666;
+      font-size: 14px;
+    }
+  }
+
+  tbody {
+    tr {
+      border-bottom: 1px solid #f1f1f1;
+      transition: background-color 0.2s;
+
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.01);
+      }
+
+      td {
+        padding: 16px;
+        color: #333;
+        font-size: 15px;
+        vertical-align: middle;
+      }
+    }
+  }
+}
+
+.btn-cancelar-tabela {
+  background-color: transparent;
+  color: $danger-color;
+  border: 1px solid $danger-color;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: $danger-color;
+    color: white;
+  }
+}
